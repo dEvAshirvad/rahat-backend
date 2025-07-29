@@ -26,8 +26,38 @@ This module provides real-time analytics and dashboard functionality for the Col
       },
       {
         "status": "pendingSDM",
+        "count": 10,
+        "percentage": 17
+      },
+      {
+        "status": "pendingRahatShakha",
         "count": 12,
         "percentage": 20
+      },
+      {
+        "status": "pendingOIC",
+        "count": 8,
+        "percentage": 13
+      },
+      {
+        "status": "pendingAdditionalCollector",
+        "count": 6,
+        "percentage": 10
+      },
+      {
+        "status": "pendingCollector",
+        "count": 4,
+        "percentage": 7
+      },
+      {
+        "status": "pendingAdditionalCollector2",
+        "count": 3,
+        "percentage": 5
+      },
+      {
+        "status": "pendingTehsildar",
+        "count": 2,
+        "percentage": 3
       },
       {
         "status": "closed",
@@ -54,7 +84,7 @@ This module provides real-time analytics and dashboard functionality for the Col
           "caseId": "RAHAT-2025-2807-0001",
           "stage": 2,
           "daysDelayed": 8,
-          "status": "pendingSDM"
+          "status": "pendingRahatShakha"
         }
       ]
     },
@@ -108,7 +138,7 @@ This module provides real-time analytics and dashboard functionality for the Col
 
 ### Status Overview
 
-- Counts cases by current status (created, pendingSDM, pendingRahatShakha, etc.)
+- Counts cases by current status (created, pendingSDM, pendingRahatShakha, pendingOIC, pendingAdditionalCollector, pendingCollector, pendingAdditionalCollector2, pendingTehsildar, closed, rejected)
 - Calculates percentage distribution across all statuses
 - Helps identify bottlenecks in workflow
 

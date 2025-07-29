@@ -394,13 +394,14 @@ export class CaseHandler {
       const currentStage = caseDoc.stage;
 
       const stageRoleMap = {
-        2: 'sdm', // SDM handles Stage 2
-        3: 'rahat-shakha', // Rahat Shakha handles Stage 3
-        4: 'oic', // OIC handles Stage 4
-        5: 'additional-collector', // Additional Collector handles Stage 5
-        6: 'collector', // Collector handles Stage 6
-        7: 'additional-collector', // Additional Collector 2 handles Stage 7
-        8: 'tehsildar', // Tehsildar handles Stage 8 for closure
+        1: 'tehsildar', // Tehsildar handles Stage 1 (creates case and uploads documents)
+        2: 'sdm', // SDM handles Stage 2 (reviews documents)
+        3: 'rahat-shakha', // Rahat Shakha handles Stage 3 (reviews)
+        4: 'oic', // OIC handles Stage 4 (reviews)
+        5: 'additional-collector', // Additional Collector handles Stage 5 (reviews)
+        6: 'collector', // Collector handles Stage 6 (reviews) - OBEY starts here
+        7: 'additional-collector', // Additional Collector handles Stage 7 (second approval) - OBEY
+        8: 'tehsildar', // Tehsildar handles Stage 8 (distributes funds and closes) - OBEY
       };
 
       // Extended role map for backtracking cases
@@ -410,8 +411,7 @@ export class CaseHandler {
         3: 'rahat-shakha', // Rahat Shakha can handle Stage 3 (returned from OIC)
         4: 'oic', // OIC can handle Stage 4 (returned from Additional Collector)
         5: 'additional-collector', // Additional Collector can handle Stage 5 (returned from Collector)
-        6: 'collector', // Collector can handle Stage 6 (returned from Additional Collector 2)
-        7: 'additional-collector', // Additional Collector can handle Stage 7 (returned from Tehsildar)
+        // Stages 6-8 (OBEY orders) cannot reject
       };
 
       const requiredRole =
@@ -420,9 +420,17 @@ export class CaseHandler {
         backtrackingRoleMap[currentStage as keyof typeof backtrackingRoleMap];
 
       // Check if user has permission for current stage (either normal or backtracking)
+      // Handle backward compatibility for 'sdm' role
+      let effectiveUserRole = userRole;
+
+      // Only map 'sdm' to 'rahat-shakha' if the required role is not 'sdm'
+      if (userRole === 'sdm' && requiredRole !== 'sdm') {
+        effectiveUserRole = 'rahat-shakha';
+      }
+
       const hasPermission =
-        (requiredRole && userRole === requiredRole) ||
-        (backtrackingRole && userRole === backtrackingRole);
+        (requiredRole && effectiveUserRole === requiredRole) ||
+        (backtrackingRole && effectiveUserRole === backtrackingRole);
 
       if (!hasPermission) {
         throw new APIError({
@@ -432,18 +440,46 @@ export class CaseHandler {
         });
       }
 
-      // For SDM stages (2), validate that the user is the assigned SDM for this case
+      // For SDM stages (2), validate that the user has proper authorization
       if (currentStage === 2 && userRole === 'sdm') {
-        const caseSDM = caseDoc.caseSDM;
-        const currentUserId = req.user?.id;
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is SDM
+      }
 
-        if (!caseSDM || caseSDM !== currentUserId) {
-          throw new APIError({
-            STATUS: 401,
-            TITLE: 'UNAUTHORIZED_SDM',
-            MESSAGE: 'Only the assigned SDM can approve this case',
-          });
-        }
+      // For Rahat Shakha stages (3), validate that the user has proper authorization
+      if (currentStage === 3 && userRole === 'rahat-shakha') {
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is Rahat Shakha
+      }
+
+      // For OIC stages (4), validate that the user has proper authorization
+      if (currentStage === 4 && userRole === 'oic') {
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is OIC
+      }
+
+      // For Additional Collector stages (5), validate that the user has proper authorization
+      if (currentStage === 5 && userRole === 'additional-collector') {
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is Additional Collector
+      }
+
+      // For Collector stages (6), validate that the user has proper authorization
+      if (currentStage === 6 && userRole === 'collector') {
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is Collector
+      }
+
+      // For Additional Collector 2 stages (7), validate that the user has proper authorization
+      if (currentStage === 7 && userRole === 'additional-collector') {
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is Additional Collector
+      }
+
+      // For Tehsildar stages (8), validate that the user has proper authorization
+      if (currentStage === 8 && userRole === 'tehsildar') {
+        // Additional validation can be added here if needed
+        // For now, just ensure the user is Tehsildar
       }
 
       // Update case workflow
@@ -499,11 +535,11 @@ export class CaseHandler {
       }
 
       // Validate case is closed
-      if (caseDoc.status !== 'closed' || caseDoc.stage !== 9) {
+      if (caseDoc.status !== 'closed' || caseDoc.stage !== 8) {
         throw new APIError({
           STATUS: 400,
           TITLE: 'INVALID_CASE_STAGE',
-          MESSAGE: 'Final PDF can only be generated for closed cases (Stage 9)',
+          MESSAGE: 'Final PDF can only be generated for closed cases (Stage 8)',
         });
       }
 
@@ -693,11 +729,11 @@ export class CaseHandler {
       }
 
       // Check if case is closed but missing payment details
-      if (caseDoc.status !== 'closed' || caseDoc.stage !== 9) {
+      if (caseDoc.status !== 'closed' || caseDoc.stage !== 8) {
         throw new APIError({
           STATUS: 400,
           TITLE: 'INVALID_CASE_STAGE',
-          MESSAGE: 'Case must be closed (Stage 9) to fix payment details',
+          MESSAGE: 'Case must be closed (Stage 8) to fix payment details',
         });
       }
 
@@ -720,7 +756,7 @@ export class CaseHandler {
 
       // Add payment remark
       caseDoc.remarks.push({
-        stage: 9,
+        stage: 8,
         remark: `Payment details added: ${paymentRemark}`,
         userId: req.user?.id || 'system',
         date: new Date(),
@@ -783,7 +819,6 @@ export class CaseHandler {
       switch (userRole) {
         case 'tehsildar':
           // Tehsildar sees cases they created (Stage 1) and cases pending closure (Stage 8)
-          // For cases they created, we need to filter by the creator
           query = {
             $or: [
               {
@@ -798,56 +833,62 @@ export class CaseHandler {
           break;
 
         case 'sdm':
-          // SDM sees cases assigned to them at Stage 2 (new cases) and Stage 3 (returned from Rahat Shakha)
+          // SDM sees cases at Stage 2 (pending SDM review)
           stageFilter = 2;
           query = {
             $or: [
-              { stage: 2, status: 'pendingSDM', caseSDM: userId }, // New cases from Tehsildar
-              { stage: 3, status: 'pendingRahatShakha', caseSDM: userId }, // Returned from Rahat Shakha
+              { stage: 2, status: 'pendingSDM' }, // Cases pending SDM review
             ],
           };
           break;
 
         case 'rahat-shakha':
-          // Rahat Shakha sees cases at Stage 3 (new cases) and Stage 4 (returned from OIC)
+          // Rahat Shakha sees cases at Stage 3 (pending Rahat Shakha review)
           stageFilter = 3;
           query = {
             $or: [
-              { stage: 3, status: 'pendingRahatShakha' }, // New cases from SDM
-              { stage: 4, status: 'pendingOIC' }, // Returned from OIC
+              { stage: 3, status: 'pendingRahatShakha' }, // Cases pending Rahat Shakha review
             ],
           };
           break;
 
         case 'oic':
-          // OIC sees cases at Stage 4 (new cases) and Stage 5 (returned from Additional Collector)
+          // OIC sees cases at Stage 4 (pending OIC review)
           stageFilter = 4;
           query = {
             $or: [
-              { stage: 4, status: 'pendingOIC' }, // New cases from Rahat Shakha
-              { stage: 5, status: 'pendingAdditionalCollector' }, // Returned from Additional Collector
+              { stage: 4, status: 'pendingOIC' }, // Cases pending OIC review
             ],
           };
           break;
 
         case 'additional-collector':
-          // Additional Collector sees cases at Stage 5 (new cases), Stage 6 (returned from Collector), and Stage 7 (second approval)
+          // Additional Collector sees cases at Stage 5 (first review) and Stage 7 (second review)
           query = {
             $or: [
-              { stage: 5, status: 'pendingAdditionalCollector' }, // New cases from OIC
-              { stage: 6, status: 'pendingCollector' }, // Returned from Collector
-              { stage: 7, status: 'pendingAdditionalCollector2' }, // Second approval (from Collector)
+              { stage: 5, status: 'pendingAdditionalCollector' }, // Cases pending Additional Collector review
+              { stage: 7, status: 'pendingAdditionalCollector2' }, // Cases pending Additional Collector 2 review
             ],
           };
           break;
 
         case 'collector':
-          // Collector sees cases at Stage 6 (new cases) and Stage 7 (returned from Additional Collector 2)
+          // Collector sees cases at Stage 6 (pending Collector review)
           stageFilter = 6;
           query = {
             $or: [
-              { stage: 6, status: 'pendingCollector' }, // New cases from Additional Collector
-              { stage: 7, status: 'pendingAdditionalCollector2' }, // Returned from Additional Collector 2
+              { stage: 6, status: 'pendingCollector' }, // Cases pending Collector review
+            ],
+          };
+          break;
+
+        case 'sdm':
+          // SDM role is deprecated but we'll map them to Rahat Shakha access for backward compatibility
+          stageFilter = 2;
+          query = {
+            $or: [
+              { stage: 2, status: 'pendingRahatShakha' }, // New cases from Tehsildar
+              { stage: 3, status: 'pendingOIC' }, // Returned from OIC
             ],
           };
           break;

@@ -81,12 +81,12 @@ The Cases module handles case creation, document management, and workflow progre
 
 **Role-Specific Cases:**
 
-- **Tehsildar:** Cases they created (Stage 1) + Cases needing document fixes (Stage 2) + Cases pending closure (Stage 9)
-- **SDM:** Cases at Stage 3 (new) + Cases at Stage 4 (returned from Rahat Shakha)
-- **Rahat Shakha:** Cases at Stage 4 (new) + Cases at Stage 5 (returned from OIC)
-- **OIC:** Cases at Stage 5 (new) + Cases at Stage 6 (returned from Additional Collector)
-- **Additional Collector:** Cases at Stage 6 (new) + Cases at Stage 7 (returned from Collector) + Cases at Stage 8 (second approval)
-- **Collector:** Cases at Stage 7 (new) + Cases at Stage 8 (returned from Additional Collector 2)
+- **Tehsildar:** Cases they created (Stage 1) + Cases pending closure (Stage 8)
+- **SDM:** Cases at Stage 2 (pending SDM review)
+- **Rahat Shakha:** Cases at Stage 3 (pending Rahat Shakha review)
+- **OIC:** Cases at Stage 4 (pending OIC review)
+- **Additional Collector:** Cases at Stage 5 (first review) + Cases at Stage 7 (second review)
+- **Collector:** Cases at Stage 6 (pending Collector review)
 
 **Response:**
 
@@ -97,7 +97,7 @@ The Cases module handles case creation, document management, and workflow progre
   "page": 1,
   "totalPages": 1,
   "userRole": "sdm",
-  "stageFilter": 3,
+  "stageFilter": 2,
   "message": "Pending cases for sdm role"
 }
 ```
@@ -167,13 +167,14 @@ The Cases module handles case creation, document management, and workflow progre
 
 **Role:** Role-based access based on current stage:
 
-- Stage 2: SDM (`sdm`) - Only the assigned SDM can approve
-- Stage 3: Rahat Shakha (`rahat-shakha`)
-- Stage 4: OIC (`oic`)
-- Stage 5: Additional Collector (`additional-collector`)
-- Stage 6: Collector (`collector`)
-- Stage 7: Additional Collector (`additional-collector`)
-- Stage 8: Tehsildar (`tehsildar`)
+- Stage 1: Tehsildar (`tehsildar`) - Creates case and uploads documents
+- Stage 2: SDM (`sdm`) - Reviews documents
+- Stage 3: Rahat Shakha (`rahat-shakha`) - Reviews case
+- Stage 4: OIC (`oic`) - Reviews case
+- Stage 5: Additional Collector (`additional-collector`) - Reviews case
+- Stage 6: Collector (`collector`) - Reviews case (OBEY starts here)
+- Stage 7: Additional Collector (`additional-collector`) - Second review (OBEY)
+- Stage 8: Tehsildar (`tehsildar`) - Distributes funds and closes case (OBEY)
 
 **Request Body:**
 
@@ -191,7 +192,7 @@ The Cases module handles case creation, document management, and workflow progre
   "message": "Case approved successfully",
   "caseId": "RAHAT-2025-2807-0001",
   "newStatus": "pendingRahatShakha",
-  "newStage": 4,
+  "newStage": 3,
   "remark": "All documents verified and approved"
 }
 ```
@@ -208,7 +209,7 @@ The Cases module handles case creation, document management, and workflow progre
 
 **Features:**
 
-- ✅ Only works for closed cases (Stage 9, status: `closed`)
+- ✅ Only works for closed cases (Stage 8, status: `closed`)
 - ✅ Includes payment details and closure certificate
 - ✅ Government-style formatting
 - ✅ Automatic filename: `RAHAT-FINAL-{caseId}.pdf`
@@ -234,7 +235,7 @@ The Cases module handles case creation, document management, and workflow progre
   "message": "Case closed successfully - Payment processed",
   "caseId": "RAHAT-2025-2807-0001",
   "status": "closed",
-  "stage": 9,
+  "stage": 8,
   "payment": {
     "status": "Completed",
     "amount": 150000,
@@ -258,51 +259,56 @@ The Cases module handles case creation, document management, and workflow progre
 
 ### Stage Progression:
 
-1. **Stage 1:** Created (Tehsildar creates case or if SDM rejects)
-2. **Stage 2:** Pending SDM (Tehsildar uploads docs or if Rahat Shakha rejects)
-3. **Stage 3:** Pending Rahat Shakha (SDM approved or if OIC rejects)
-4. **Stage 4:** Pending OIC (Rahat Shakha approved or if Additional Collector rejects)
-5. **Stage 5:** Pending Additional Collector (OIC approved or if Collector rejects)
-6. **Stage 6:** Pending Collector (Additional Collector approved - **OBEY**)
-7. **Stage 7:** Pending Additional Collector 2 (Collector approved - **OBEY**)
-8. **Stage 8:** Pending Tehsildar (Additional Collector 2 approved - **OBEY**)
-9. **Stage 9:** Closed (Tehsildar marks funds distributed)
+1. **Stage 1:** Created Waiting for Documents (Tehsildar creates case and uploads documents)
+2. **Stage 2:** SDM Review Pending (SDM reviews documents)
+3. **Stage 3:** Rahat Shakha Review Pending (Rahat Shakha reviews case)
+4. **Stage 4:** OIC Review Pending (OIC reviews case)
+5. **Stage 5:** Additional Collector Review Pending (Additional Collector reviews case)
+6. **Stage 6:** Collector Review Pending (Collector reviews case) - **OBEY** starts here
+7. **Stage 7:** Additional Collector Job Pending (Additional Collector second review) - **OBEY**
+8. **Stage 8:** Tehsildar distributes funds and closes case - **OBEY**
 
 ### Status Values:
 
 - `created` - Initial case creation
-- `pendingSDM` - Waiting for assigned SDM review
+- `pendingSDM` - Waiting for SDM review
 - `pendingRahatShakha` - Waiting for Rahat Shakha review
 - `pendingOIC` - Waiting for OIC review
 - `pendingAdditionalCollector` - Waiting for Additional Collector review
-- `pendingCollector` - Waiting for Collector review (OBEY)
-- `pendingAdditionalCollector2` - Waiting for second Additional Collector review (OBEY)
-- `pendingTehsildar` - Waiting for Tehsildar to close case and distribute funds (OBEY)
+- `pendingCollector` - Waiting for Collector review
+- `pendingAdditionalCollector2` - Waiting for Additional Collector 2 review
+- `pendingTehsildar` - Waiting for Tehsildar to close case and distribute funds
 - `rejected` - Case rejected
 - `closed` - Case closed (funds distributed)
 
-### Case Assignment:
+### Role Responsibilities:
 
-- **caseSDM:** Each case is automatically assigned to the Tehsildar's appointed SDM
-- **SDM Validation:** Only the assigned SDM can approve cases at Stage 3
-- **Hierarchy:** Tehsildar → Assigned SDM → Other roles (single user each)
+- **Tehsildar:**
+  - Stage 1: Creates case and uploads documents
+  - Stage 8: Distributes funds and closes case
+- **SDM:**
+  - Stage 2: Reviews documents
+- **Rahat Shakha:**
+  - Stage 3: Reviews case
+- **OIC:**
+  - Stage 4: Reviews case
+- **Additional Collector:**
+  - Stage 5: First review
+  - Stage 7: Second review (OBEY)
+- **Collector:**
+  - Stage 6: Final review (OBEY starts here)
 
-### Simplified Workflow:
+### OBEY Orders:
 
-1. **Stage 1:** Tehsildar creates case
-2. **Stage 2:** Tehsildar uploads documents → SDM reviews
-3. **Stage 3:** SDM approves → Rahat Shakha reviews
-4. **Stage 4:** Rahat Shakha approves → OIC reviews
-5. **Stage 5:** OIC approves → Additional Collector reviews
-6. **Stage 6:** Additional Collector approves → **Collector reviews (OBEY)**
-7. **Stage 7:** Collector approves → **Additional Collector 2 reviews (OBEY)**
-8. **Stage 8:** Additional Collector 2 approves → **Tehsildar closes (OBEY)**
-9. **Stage 9:** Tehsildar distributes funds and closes case
+After Collector approval (Stage 6), no rejection is allowed. The workflow becomes an "OBEY" order where:
+
+- Stage 7: Additional Collector must approve
+- Stage 8: Tehsildar must distribute funds and close
 
 ### Rejection Workflow:
 
-- **Any stage can reject** → Case goes back to previous stage
-- **Collector onwards (Stages 6-8):** No rejection allowed - **OBEY** orders
+- **Stages 1-6 can reject** → Case goes back to previous stage
+- **Stages 7-8 (OBEY orders):** No rejection allowed
 - **Simple backtracking:** Each rejection moves case back one stage
 
 ## Error Handling

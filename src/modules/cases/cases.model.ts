@@ -51,7 +51,7 @@ const zCase = z.object({
       'rejected',
     ])
     .default('created'),
-  stage: z.number().min(1).max(10).default(1),
+  stage: z.number().min(1).max(8).default(1),
   documents: z.array(zCaseDocument).default([]),
   remarks: z.array(zRemark).default([]),
   payment: zPayment.optional(),
@@ -149,7 +149,7 @@ const caseSchema = new Schema<Case>(
         'rejected',
       ],
     },
-    stage: { type: Number, default: 1, min: 1, max: 10 },
+    stage: { type: Number, default: 1, min: 1, max: 8 },
     documents: [caseDocumentSchema],
     remarks: [remarkSchema],
     payment: paymentSchema,

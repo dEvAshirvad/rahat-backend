@@ -94,7 +94,7 @@ export class CaseService {
    */
   static async getCaseByCaseId(caseId: string): Promise<Case | null> {
     try {
-      const caseDoc = await CaseModel.findOne({ caseId }).exec();
+      const caseDoc = await CaseModel.findOne({ caseId }).lean();
       return caseDoc;
     } catch (error) {
       throw error;
@@ -318,13 +318,14 @@ export class CaseService {
       if (status === 'approved') {
         // Handle approval workflow
         const workflowMap = {
+          1: { status: 'pendingSDM', stage: 2 }, // Tehsildar uploads documents, goes to SDM
           2: { status: 'pendingRahatShakha', stage: 3 }, // SDM approves, goes to Rahat Shakha
           3: { status: 'pendingOIC', stage: 4 }, // Rahat Shakha approves, goes to OIC
           4: { status: 'pendingAdditionalCollector', stage: 5 }, // OIC approves, goes to Additional Collector
           5: { status: 'pendingCollector', stage: 6 }, // Additional Collector approves, goes to Collector
           6: { status: 'pendingAdditionalCollector2', stage: 7 }, // Collector approves, goes to Additional Collector 2
           7: { status: 'pendingTehsildar', stage: 8 }, // Additional Collector 2 approves, goes to Tehsildar
-          8: { status: 'closed', stage: 9 }, // Tehsildar closes, final stage
+          8: { status: 'closed', stage: 8 }, // Tehsildar distributes funds and closes
         };
 
         const nextStep = workflowMap[currentStage as keyof typeof workflowMap];
@@ -383,9 +384,9 @@ export class CaseService {
 
         // Check if this is the third rejection
         if (stageRejections >= 2) {
-          // Escalate to Collector (Stage 7)
+          // Escalate to Collector (Stage 6) - OBEY order
           caseDoc.status = 'pendingCollector';
-          caseDoc.stage = 7;
+          caseDoc.stage = 6;
 
           caseDoc.remarks.push({
             stage: 7,
@@ -405,16 +406,7 @@ export class CaseService {
               status: 'pendingAdditionalCollector',
               role: 'Collector',
             }, // Collector rejects → back to Additional Collector
-            7: {
-              stage: 6,
-              status: 'pendingCollector',
-              role: 'Additional Collector 2',
-            }, // Additional Collector 2 rejects → back to Collector
-            8: {
-              stage: 7,
-              status: 'pendingAdditionalCollector2',
-              role: 'Tehsildar',
-            }, // Tehsildar rejects → back to Additional Collector 2
+            // Stages 7-8 (OBEY orders) cannot reject
           };
 
           const rejectionStep =
@@ -489,7 +481,7 @@ export class CaseService {
 
       // Update case to closed status
       caseDoc.status = 'closed';
-      caseDoc.stage = 9; // Move to stage 9 (closed)
+      caseDoc.stage = 8; // Move to stage 8 (closed)
 
       // Add payment details
       caseDoc.payment = {
@@ -504,7 +496,7 @@ export class CaseService {
       const closureRemark = `Case closed - Payment processed: ${paymentRemark}`;
 
       caseDoc.remarks.push({
-        stage: 9,
+        stage: 8,
         remark: closureRemark,
         userId: userId || 'system',
         date: new Date(),

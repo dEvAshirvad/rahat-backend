@@ -176,7 +176,7 @@ export class PDFGenerator {
     // Status information in table format
     const statusInfo = [
       ['Current Status:', this.formatStatus(caseData.status)],
-      ['Current Stage:', `Stage ${caseData.stage} of 9`],
+      ['Current Stage:', `Stage ${caseData.stage} of 8`],
     ];
 
     this.addTable(doc, statusInfo, primaryColor, secondaryColor);
@@ -272,11 +272,12 @@ export class PDFGenerator {
     const statusMap: { [key: string]: string } = {
       created: 'Created',
       pendingSDM: 'Pending SDM Review',
-      pendingRahatShakha: 'Pending Rahat Shakha',
+      pendingRahatShakha: 'Pending Rahat Shakha Review',
       pendingOIC: 'Pending OIC Review',
-      pendingAdditionalCollector: 'Pending Additional Collector',
+      pendingAdditionalCollector: 'Pending Additional Collector Review',
       pendingCollector: 'Pending Collector Review',
-      approved: 'Approved',
+      pendingAdditionalCollector2: 'Pending Additional Collector 2 Review',
+      pendingTehsildar: 'Pending Tehsildar Closure',
       closed: 'Closed',
       rejected: 'Rejected',
     };
