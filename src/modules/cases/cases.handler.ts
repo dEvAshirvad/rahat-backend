@@ -229,7 +229,7 @@ export class CaseHandler {
   static async uploadDocuments(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { patwari, ti } = req.body;
+      const { patwari, ti, postmortem } = req.body;
 
       if (!id) {
         throw new APIError({
@@ -242,7 +242,8 @@ export class CaseHandler {
       // Validate that at least one document array is provided
       if (
         (!patwari || !Array.isArray(patwari) || patwari.length === 0) &&
-        (!ti || !Array.isArray(ti) || ti.length === 0)
+        (!ti || !Array.isArray(ti) || ti.length === 0) &&
+        (!postmortem || !Array.isArray(postmortem) || postmortem.length === 0)
       ) {
         throw new APIError({
           STATUS: 400,
@@ -294,7 +295,7 @@ export class CaseHandler {
 
       const validatedPatwariUrls = validateUrls(patwari, 'patwari');
       const validatedTiUrls = validateUrls(ti, 'thana inspector');
-
+      const validatedPostmortemUrls = validateUrls(postmortem, 'postmortem');
       // Prepare document metadata
       const documents = {
         patwari: validatedPatwariUrls.map((url) => ({
@@ -305,6 +306,11 @@ export class CaseHandler {
         ti: validatedTiUrls.map((url) => ({
           url,
           type: 'thana_inspector',
+          uploadedAt: new Date().toISOString(),
+        })),
+        postmortem: validatedPostmortemUrls.map((url) => ({
+          url,
+          type: 'postmortem',
           uploadedAt: new Date().toISOString(),
         })),
       };
