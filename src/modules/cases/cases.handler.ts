@@ -280,7 +280,7 @@ export class CaseHandler {
         return urls.filter((url) => {
           if (
             typeof url !== 'string' ||
-            !url.startsWith('http://localhost:3034/api/v1/files/')
+            !url.startsWith(env.FILE_URL + '/api/v1/files/')
           ) {
             throw new APIError({
               STATUS: 400,

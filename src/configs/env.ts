@@ -31,6 +31,7 @@ const EnvSchema = z.object({
   COOKIE_DOMAIN: z.string().default('localhost'),
   BASE_URL: z.string(),
   AUTH_URL: z.string(),
+  FILE_URL: z.string(),
 });
 
 export type env = z.infer<typeof EnvSchema>;
