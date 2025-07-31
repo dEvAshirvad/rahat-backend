@@ -40,6 +40,7 @@ const allowedOrigins = [
   'https://shresth.rdmp.in',
   'https://rahat.rdmp.in',
   'https://filesapi.rdmp.in',
+  'https://rahatapi.rdmp.in',
 ];
 
 export function createRouter(): Express {
