@@ -1,3 +1,4 @@
+import logger from '@/configs/logger';
 import { currentMember, getSession } from '@/lib/api-client';
 import { AxiosHeaders } from 'axios';
 import { Request, Response, NextFunction } from 'express';
@@ -10,11 +11,14 @@ export default async function sessionDeserializer(
   const headers = new AxiosHeaders();
   headers.set('Cookie', req.headers.cookie as string);
   const session = await getSession(headers);
+  logger.info('session : ', session);
   if (session) {
     req.session = session.session;
   }
   if (session?.user) {
     const member = await currentMember(headers);
+    logger.info('member : ', member);
+
     if (member) {
       req.user = {
         ...session.user,
