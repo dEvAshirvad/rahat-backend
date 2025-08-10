@@ -63,6 +63,7 @@ export const getSession = async (
         headers,
       }
     );
+    logger.info('response : ', response);
     return response.data;
   } catch (error) {
     logger.error('error', error);

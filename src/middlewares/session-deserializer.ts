@@ -10,6 +10,7 @@ export default async function sessionDeserializer(
 ) {
   const headers = new AxiosHeaders();
   headers.set('Cookie', req.headers.cookie as string);
+  logger.info('headers : ', headers);
   const session = await getSession(headers);
   logger.info('session : ', session);
   if (session) {
